@@ -1,27 +1,98 @@
-# NgxApplize
+# ngx-applize
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 13.1.2.
+The building blocks of your smart Angular application.
 
-## Development server
+## Table of contents
+- [ngx-applize](#ngx-applize)
+  - [Table of contents](#table-of-contents)
+  - [@ngx-applize/events](#ngx-applizeevents)
+    - [Installation](#installation)
+    - [Usage](#usage)
+      - [1. Import **`EventsModule`** from `@ngx-applize/events`:](#1-import-eventsmodule-from-ngx-applizeevents)
+      - [2. Define a `TypedEvent`](#2-define-a-typedevent)
+      - [3. Publish Events](#3-publish-events)
+        - [By service](#by-service)
+        - [By directive](#by-directive)
+## @ngx-applize/events
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+A ways to raise and handle events through multiple browser tabs inside an Angular 12+ Application.
 
-## Code scaffolding
+### Installation
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Install the package using `npm`:
+```sh
+npm i @ngx-applize/events --save
+```
 
-## Build
+### Usage
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+#### 1. Import **`EventsModule`** from `@ngx-applize/events`:
 
-## Running unit tests
+```ts
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { EventsModule } from '@ngx-applize/events';
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+@NgModule({
+    imports: [
+        BrowserModule,
+        EventsModule.forRoot(), // <--
+    ],
+    bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
 
-## Running end-to-end tests
+#### 2. Define a `TypedEvent`
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Create a file next to `app.component.ts` called `events.ts` and copy following lines to it:
 
-## Further help
+```ts
+// The 'key' can be any string, but keep avoid duplicate keys!
+// Untyped events have no generic parameter:
+export const EVENT_COUNTER_INC = new TypedEvent('counter.inc');
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+// Typed events have expicitly mentioned the type of data
+export const EVENT_COUNTER_UPDATE = new TypedEvent<number>('counter.update');
+```
+
+#### 3. Publish Events
+##### By service
+```ts
+import { Component } from '@angular/core';
+import { EventService } from '@ngx-applize/events';
+import { EVENT_INC_COUNTER } from './events.ts';
+
+@Component({
+    selector: 'app',
+    template: `
+        <button (click)="onClick()"> Inc. Counter </button>
+    `
+})
+export class AppComponent {
+
+    #localCache: number = 0;
+
+    constructor(eventService: EventService) {    }
+
+    onClick() {
+      // Publishing with no data
+      this.eventService.publish(EVENT_INC_COUNTER);
+      
+      // Publishing with data
+      this.eventService.publish(EVENT_COUNTER_UPDATE, this.#localCache);
+      
+      // This will give you a type mismatch error:
+      this.eventService.publish(EVENT_COUNTER_UPDATE, 'Some String Value');
+    }
+}
+```
+
+##### By directive
+```html
+<button 
+  publish="counter.update"
+  on="click",
+  [with]="10"
+> Click on me to publish event </button>
+```
